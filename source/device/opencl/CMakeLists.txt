@@ -9,45 +9,54 @@ UNSET (_DEV_OCL_LINKER_OPTIONS)
 UNSET (_DEV_OCL_LINK_LIBRARIES)
 
 
-# 1.  set source root path
+# add link options
+OPTION(TENGINE_OPENCL_PROFILE_TIME "enable opencl profile time" OFF)
+IF (TENGINE_OPENCL_PROFILE_TIME)
+    LIST(APPEND _DEV_OCL_COMPILER_DEFINES OPENCL_PROFILE_TIME)
+ENDIF ()
+OPTION(TENGINE_OPENCL_MODEL_CACHE "enable opencl cache" ON)
+OPTION(TENGINE_OPENCL_DEBUG_DATA "enable node tensor debug data" OFF)
+IF (TENGINE_OPENCL_DEBUG_DATA)
+    LIST(APPEND _DEV_OCL_COMPILER_DEFINES OPENCL_DEBUG_DATA)
+ENDIF()
+
+
+#  set source root path
 SET(_OCL_ROOT ${CMAKE_SOURCE_DIR}/source/device/opencl)
 
 
 # 2.  add header file path
 LIST (APPEND _DEV_OCL_HEADER_PATH           ${_OCL_ROOT})
-LIST (APPEND _DEV_OCL_HEADER_PATH           ${OPENCL_INCLUDE_DIRS})
+LIST (APPEND _DEV_OCL_HEADER_PATH           ${_OCL_ROOT}/include)
+
+# add source files
+AUX_SOURCE_DIRECTORY("${_OCL_ROOT}" _OCL_BASE_SOURCE)
+AUX_SOURCE_DIRECTORY("${_OCL_ROOT}/oppack4" _OCL_OPS_SOURCE_PACK4)
+LIST(APPEND _DEV_OCL_DEVICE_SOURCE "${_OCL_ROOT}/cl4/ocl_program_hex.cc")
+LIST(APPEND _DEV_OCL_DEVICE_SOURCE ${_OCL_BASE_SOURCE})
+LIST(APPEND _DEV_OCL_DEVICE_SOURCE ${_OCL_OPS_SOURCE})
+LIST(APPEND _DEV_OCL_DEVICE_SOURCE ${_OCL_OPS_SOURCE_PACK4})
+
+IF (TENGINE_OPENCL_MODEL_CACHE)
+    AUX_SOURCE_DIRECTORY("${_OCL_ROOT}/cache" _OCL_CACHE)
+    LIST(APPEND _DEV_OCL_DEVICE_SOURCE ${_OCL_CACHE})
+ENDIF ()
 
 
-# 3.  add linking lib searching path
-LIST (APPEND _DEV_OCL_LINK_PATH             ${OPENCL_LIBRARY})
-
-
-# 4.  add source files
-AUX_SOURCE_DIRECTORY("${_OCL_ROOT}"         _OCL_BASE_SOURCE)
-AUX_SOURCE_DIRECTORY("${_OCL_ROOT}/op"      _OCL_OPS_SOURCE)
-LIST (APPEND _DEV_OCL_DEVICE_SOURCE         ${_OCL_BASE_SOURCE})
-LIST (APPEND _DEV_OCL_DEVICE_SOURCE         ${_OCL_OPS_SOURCE})
-
-
-# 5.  add build options for cpu device
-# 5.1 is a gcc or clang like compiler
+# add build options for cpu device
+# is a gcc or clang like compiler
 IF (TENGINE_COMPILER_GCC OR TENGINE_COMPILER_CLANG)
     IF (TENGINE_COMPILER_GCC AND (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "6.1"))
-        LIST (APPEND _DEV_OCL_COMPILER_OPTIONS -Wno-ignored-attributes)
-    ENDIF()
-ENDIF()
+        LIST(APPEND _DEV_OCL_COMPILER_OPTIONS -Wno-ignored-attributes)
+    ENDIF ()
+ENDIF ()
 
 
-# 5.2 is Microsoft Visual C++
-IF (TENGINE_COMPILER_MSVC)
-ENDIF()
-
-
-# 6.  add link options
-
-
-# 7.  add link libs
-LIST (APPEND _DEV_OCL_LINK_LIBRARIES   "libOpenCL.so")
+FIND_PACKAGE(OpenCL)
+IF (NOT OpenCL_FOUND)
+    message(WARNING "please set opencl library path manual")
+ENDIF ()
+LIST(APPEND _DEV_OCL_LINK_LIBRARIES ${OpenCL_LIBRARY})
 
 
 # 8. set all to cmake cache

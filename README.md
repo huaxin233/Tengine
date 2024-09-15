@@ -1,6 +1,6 @@
 <div align="center">
   <img width="40%" src="logo-Tengine.png">
-  <h3> <a href="https://tengine-docs.readthedocs.io/en/latest/"> Documentation </a> | <a href="https://tengine-docs.readthedocs.io/zh_CN/latest/"> 中文文档 </a>  </h3>
+  <h3> <a href="https://tengine-docs.readthedocs.io/en/latest/"> Documentation </a> | <a href="https://tengine.readthedocs.io/zh_CN/latest/"> 中文文档 </a>  </h3>
 </div>
 
 简体中文 | [English](./README_EN.md)
@@ -8,8 +8,7 @@
 # Tengine
 
 [![GitHub license](http://OAID.github.io/pics/apache_2.0.svg)](./LICENSE)
-[![Build Status](https://img.shields.io/github/workflow/status/OAID/Tengine/Tengine-Lite-Actions/tengine-lite)](https://github.com/OAID/Tengine/actions?query=workflow%3ATengine-Lite-Actions)
-[![Build Status](https://img.shields.io/github/workflow/status/OAID/Tengine-Convert-Tools/Tengine-Convert-Tools-Actions?label=tools%20build)](https://github.com/OAID/Tengine-Convert-Tools/actions?query=workflow%3ATengine-Convert-Tools-Actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/OAID/Tengine/build-and-test.yml?branch=tengine-lite)](https://github.com/OAID/Tengine/actions)
 [![Test Status](https://img.shields.io/travis/OAID/Tengine/tengine-lite?label=test)](https://travis-ci.org/OAID/Tengine)
 [![codecov](https://codecov.io/gh/OAID/Tengine/branch/tengine-lite/graph/badge.svg?token=kz9NcQPRrk)](https://codecov.io/gh/OAID/Tengine)
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/OAID/Tengine.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/OAID/Tengine/context:cpp)
@@ -29,17 +28,18 @@ Tengine 核心代码由 4 个模块组成：
 
 ## 架构简析
 
-![Tengine 架构](doc/architecture.png)
+![Tengine 架构](doc/docs_zh/images/architecture.png)
 
 ## 快速上手
 
 ### 编译
 
-- [快速编译](doc/compile.md) 基于 cmake 实现简单的跨平台编译。
+- [快速编译](doc/docs_zh/source_compile) 基于 cmake 实现简单的跨平台编译。
 
 ### 示例
 
 - [examples](examples/) 提供基础的分类、检测算法用例，根据 issue 需求持续更新。
+- [源安装](doc/docs_zh/quick_start/apt-get-install_user_manual.md) 提供ubuntu系统的apt-get命令行安装和试用，目前支持x86/A311D硬件。
 
 ### 模型仓库
 
@@ -49,13 +49,18 @@ Tengine 核心代码由 4 个模块组成：
 
 ### 转换工具
 
-- [预编译版本](https://github.com/OAID/Tengine/releases/download/lite-v1.2/convert_tool.zip)：提供 Ubuntu 18.04 系统上预编译好的模型转换工具；
-- [在线转换版本](https://convertmodel.com/#outputFormat=tengine)：基于 WebAssembly 实现（浏览器本地转换，模型不会上传）；
-- [源码编译](https://github.com/OAID/Tengine-Convert-Tools)：参考 **Tengine-Convert-Tools** 项目编译生成，建议采用。
+- [预编译版本](https://github.com/OAID/Tengine/releases/download/lite-v1.2/convert_tool.zip) ：提供 Ubuntu 18.04 系统上预编译好的模型转换工具；
+- [在线转换版本](https://convertmodel.com/#outputFormat=tengine) ：基于 WebAssembly 实现（浏览器本地转换，模型不会上传；
+- [源码编译](https://github.com/OAID/Tengine/tree/tengine-lite/tools/convert_tool) ：建议在服务器或者PC上编译，指令如下：
+  ```
+  mkdir build && cd build
+  cmake -DTENGINE_BUILD_CONVERT_TOOL=ON ..
+  make -j`nproc`
+  ```
 
 ### 量化工具
 
-- [预编译版本](tools/quantize/README.md)：提供 Ubuntu 18.04 系统上预编译好的模型量化工具，已支持uint8/int8。
+- [源码编译](tools/quantize/README.md)：已开源量化工具源码，已支持 uint8/int8。
 
 ### 速度评估
 
@@ -63,14 +68,21 @@ Tengine 核心代码由 4 个模块组成：
 
 ### NPU Plugin
 
-- [TIM-VX](doc/npu_tim-vx_user_manual.md) VeriSilicon NPU 使用指南。
+- [TIM-VX](doc/docs_zh/source_compile/compile_timvx.md) VeriSilicon NPU 使用指南。
 
 ### AutoKernel Plugin
-- [AutoKernel](https://github.com/OAID/AutoKernel.git) 是一个简单易用，低门槛的自动算子优化工具，AutoKernel Plugin实现了自动优化算子一键部署到Tengine中。
+
+- [AutoKernel](https://github.com/OAID/AutoKernel.git) 是一个简单易用，低门槛的自动算子优化工具，AutoKernel Plugin实现了自动优化算子一键部署到 Tengine 中。
+
+### Container
+
+- [SuperEdge](https://github.com/superedge/superedge) 借助 SuperEdge 边缘计算的开源容器管理系统，提供更便捷的业务管理方案；
+- [How to use Tengine with SuperEdge](doc/docs_zh/source_compile/deploy_SuperEdge.md) 容器使用指南；
+- [Video Capture user manual](doc/docs_zh/source_compile/demo_videocapture.md) Demo 依赖文件生成指南。
 
 ## Roadmap
 
-- [Road map](doc/roadmap.md)
+- [Road map](doc/docs_zh/introduction/roadmap.md)
 
 ## 致谢
 
@@ -88,18 +100,22 @@ Tengine Lite 参考和借鉴了下列项目：
 - [stb](https://github.com/nothings/stb)
 - [convertmodel](https://convertmodel.com)
 - [TIM-VX](https://github.com/VeriSilicon/TIM-VX)
+- [SuperEdge](https://github.com/superedge/superedge)
 
 ## License
 
 - [Apache 2.0](LICENSE)
 
+## 澄清说明
+
+- [在线上报功能] 在线上报功能主要目的是了解Tengine的使用信息，信息用于优化和迭代Tengine，不会影响任何正常功能。该功能默认开启，如需关闭，可修改如下配置关闭：(主目录 CMakeLists.txt )  OPTION (TENGINE_ONLINE_REPORT "online report" OFF)
+
 ## FAQ
 
-- [FAQ 常见问题](doc/faq.md)
+- [FAQ 常见问题](doc/docs_zh/introduction/faq.md)
 
 ## 技术讨论
 
 - Github issues
 - QQ 群: 829565581
 - Email: Support@openailab.com
-- Tengine 社区: http://www.tengine.org.cn

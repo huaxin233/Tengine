@@ -7,6 +7,7 @@ Tengine Lite 的 examples 将提供简单的、好玩的 demo。
 - [人脸关键点检测任务](#人脸关键点检测任务---tm_landmarkcpp)
 - [ssd 目标检测任务](#ssd-目标检测任务---tm_mobilenet_ssdc)
 - [retinaface 人脸检测任务](#retinaface-人脸检测任务---tm_retinafacecpp)
+- [scrfd 人脸检测任务](#scrfd-人脸检测任务---tm_scrfdcpp)
 - [yolact 实例分割任务](#yolact-实例分割任务---tm_yolactcpp)
 - [unet 图像分割任务](#unet-图像分割任务---tm_unetcpp)
 - [yolov3 目标检测任务](#yolov3-目标检测任务---tm_yolov3cpp)
@@ -14,10 +15,16 @@ Tengine Lite 的 examples 将提供简单的、好玩的 demo。
 - [yolov5s 目标检测任务](#yolov5s目标检测任务---tm_yolov5scpp)
 - [nanodet 目标检测任务](#nanodet目标检测任务---tm_nanodet_mcpp)
 - [efficientdet 目标检测任务](#efficientdet目标检测任务---tm_efficientdetc)
+- [yolox 目标检测任务](#yolox目标检测任务---tm_yoloxcpp)
 - [openpose 人体姿态识别任务](#openpose人体姿态识别任务---tm_openposecpp)
 - [hrnet 人体姿态识别任务](#hrnet人体姿态识别任务---tm_hrnetcpp)
 - [crnn 汉字识别任务](#汉字识别任务---tm_crnncpp)
+- [seghuman 人像分割任务](#人像分割任务---tm_seghumancpp)
   
+除单张图片单模型推理级的任务外，Tengine Lite 还提供了基于视频流/图片流 pipeline 级别的功能演示
+
+- [人体距离预测](#人体距离预测)
+- [人脸注册](#人脸注册)
 ----------
 ## 分类任务 - [tm_classification.c](tm_classification.c)
 
@@ -60,6 +67,7 @@ install
 │   ├── tm_nanodet_m
 │   ├── tm_openpose
 │   ├── tm_retinaface
+│   ├── tm_scrfd
 │   ├── tm_ultraface
 │   ├── tm_unet
 │   ├── tm_yolact
@@ -188,6 +196,34 @@ BOX 0.98:( 290.004 , 104.453 ),( 37.6346 , 46.7777 )
 
 ![](https://z3.ax1x.com/2021/07/01/Rrs6LF.jpg)
 
+## scrfd 人脸检测任务 - [tm_scrfd.cpp](tm_scrfd.cpp)
+
+使用图片：
+
+![](https://z3.ax1x.com/2021/11/25/oAaGVS.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_scrfd -m models/scrfd_2.5g_kps.tmfile -i images/face5.jpg -r 1 -t 1
+```
+结果如下：
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, thread 1, avg time 289.97 ms, max_time 289.97 ms, min_time 289.97 ms
+--------------------------------------
+detection num: 5
+0.90917 at 199.37 54.92 28.52 x 38.12
+0.89985 at 70.50 29.96 32.26 x 41.25
+0.88838 at 111.36 48.00 33.53 x 46.77
+0.88484 at 247.54 51.15 30.21 x 37.29
+0.83953 at 149.23 49.48 27.89 x 38.50
+
+
+```
+
+![](https://z3.ax1x.com/2021/11/25/oAUxN4.jpg)
+
 ## yolact 实例分割任务 - [tm_yolact.cpp](tm_yolact.cpp)
 
 使用图片：
@@ -236,7 +272,7 @@ image file : images/carvana01.jpg
 img_h, img_w, scale[3], mean[3] : 512 512 , 0.004 0.004 0.004, 0.0 0.0 0.0
 Repeat 1 times, thread 1, avg time 4861.93 ms, max_time 4861.93 ms, min_time 4861.93 ms
 --------------------------------------
-segmentatation result is save as unet_out.png
+segmentation result is save as unet_out.png
 ```
 
 ![](https://z3.ax1x.com/2021/07/01/Rs8YjI.png)
@@ -365,6 +401,33 @@ Repeat 1 times, thread 1, avg time 598.86 ms, max_time 598.86 ms, min_time 598.8
 
 ![](https://z3.ax1x.com/2021/07/08/RqxsmR.jpg)
 
+## yolox目标检测任务 - [tm_yolox.cpp](tm_yolox.cpp)
+
+使用图片：
+
+![](https://z3.ax1x.com/2021/06/30/RBVdq1.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_yolox -m ../models/yolox_nano.tmfile -i ../images/ssd_dog.jpg -r 1 -t 1
+```
+结果如下：
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, thread 1, avg time 97.64 ms, max_time 97.64 ms, min_time 97.64 ms
+--------------------------------------
+detection num: 3
+16:  85%, [ 132,  216,  318,  545], dog
+ 1:  83%, [ 112,  140,  568,  427], bicycle
+ 2:  69%, [ 466,   77,  693,  168], car
+
+```
+
+![](https://z3.ax1x.com/2021/11/19/IHwcJ1.jpg)
+
+
+
 
 ## openpose人体姿态识别任务 - [tm_openpose.cpp](tm_openpose.cpp)
 
@@ -471,5 +534,74 @@ Repeat 1 times, thread 1, avg time 23.30 ms, max_time 23.30 ms, min_time 23.30 m
 ```
 
 其中ocr的识别结果会直接打印到终端中, 同时如果需要保存为txt文件可以修改源码使其重定向到文件。
+
+
+## 人像分割任务 - [tm_seghuman.cpp](tm_seghuman.cpp)
+
+模型文件：`paddleSegSim.tmfile`
+
+测试图片：`human_image.jpg`
+
+测试图片：
+
+![](https://s1.ax1x.com/2021/12/09/offIJK.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_seghuman -m models/paddleSegSim.tmfile -i images/human_image.jpeg
+```
+
+结果如下：
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, avg time 123.766 ms, max_time 123.766 ms, min_time 123.766 ms
+```
+
+![](https://s1.ax1x.com/2021/12/09/of4XPP.jpg)
+
+人像分割结果会保存为图片，名称为：seg_human_result.jpg
+
+
+## 人体距离预测
+
+模型文件：`mobilenet_ssd.tmfile`
+
+执行（建议用 GPU 推理）：
+```bash
+$ cd build/examples
+$ ln -s models/mobilenet_ssd.tmfile
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./tm_pipeline_estimate_ped_distance
+detect result num: 1 
+person	:100.0%
+BOX:( 35 , 78 ),( 587 , 478 )
+...
+```
+
+## 人脸注册
+
+模型文件列表：
+* `rfb-320.tmfile` 人脸检测
+* `landmark.tmfile` 关键点
+* `mobilefacenet.tmfile` 特征提取
+
+```bash
+$ cd build/examples
+$ ln -s models/rfb-320.tmfile
+$ ln -s models/landmark.tmfile
+$ ln -s models/mobilefacenet.tmfile
+```
+
+假设注册集在 `build/examples/images`。
+执行（建议用 GPU 推理）：
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./tm_pipeline_enroll_face  ./images
+```
+
+当前目录会生成类似`feature0.bin` 多个序列化文件，存有人脸特征。
+
+
 
 我们将持续更新各种有趣的 demo ，敬请期待......

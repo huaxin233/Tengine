@@ -8,6 +8,7 @@ Tengine Lite's examples providing simple yet fancy demos.
   - [Facial Landmark Detection](#facial-landmark-detection-task---tm_landmarkcpp)
   - [SSD Object Detection](#ssd-object-detection-task---tm_mobilenet_ssdc)
   - [RetinaFace Face Detection](#retinaface-face-detection-task---tm_refinafacecpp)
+  - [Scrfd Face Detection](#scrfd-face-detection-task---tm_scrfdcpp)
   - [Yolact Instance Segmentation](#yolact-instance-segmentation-task---tm_yolactcpp)
   - [U-Net Image Segmentation](#u-net-image-segmentation-task---tm_unetcpp)
   - [YoloV3 Object Detection Task](#yolov3-object-detection-task---tm_yolov3cpp)
@@ -15,10 +16,17 @@ Tengine Lite's examples providing simple yet fancy demos.
   - [YoloV5s Object Detection Task](#yolov5s-object-detection-task---tm_yolov5scpp)
   - [NanoDet Object Detection Task](#nanodet-object-detection-task---tm_nanodet_mcpp)
   - [EfficientDet Object Detection Task](#efficientdet-object-detection-task---tm_efficientdetc)
+  - [Yolox Object Detection Task](#yolox-object-detection-task---tm_yoloxcpp)
   - [OpenPose Human Pose Estimation Task](#openpose-human-pose-estimation-task---tm_openposecpp)
   - [HRNet Human Pose Estimation Task](#hrnet-human-pose-estimation-task---tm_hrnetcpp)
   - [CRNN Chinese character recognition](#chinese-character-recognition-task---tm_crnncpp)
-  
+  - [PaddleSeg Human Segmentation](#human-segmentation-task---tm_seghumancpp)
+
+In addition to single-image single-model-inference example, Tengine Lite gives pipeline application based on video and image stream.
+
+  - [Distance Estimation](#Distance-Estimation)
+  - [Facial Feature Extraction](#Facial-Feat-Extraction)
+
 ----------
 ## Classification task - [tm_classification.c](tm_classification.c)
 
@@ -63,6 +71,7 @@ install
 │   ├── tm_nanodet_m
 │   ├── tm_openpose
 │   ├── tm_retinaface
+│   ├── tm_scrfd
 │   ├── tm_ultraface
 │   ├── tm_unet
 │   ├── tm_yolact
@@ -192,6 +201,37 @@ BOX 0.98:( 290.004 , 104.453 ),( 37.6346 , 46.7777 )
 
 ![](https://z3.ax1x.com/2021/07/01/Rrs6LF.jpg)
 
+
+## Scrfd Face Detection Task - [tm_scrfd.cpp](tm_scrfd.cpp)
+
+We use this image:
+
+![](https://z3.ax1x.com/2021/11/25/oAaGVS.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_scrfd -m models/scrfd_2.5g_kps.tmfile -i images/face5.jpg -r 1 -t 1
+```
+
+output：
+
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, thread 1, avg time 289.97 ms, max_time 289.97 ms, min_time 289.97 ms
+--------------------------------------
+detection num: 5
+0.90917 at 199.37 54.92 28.52 x 38.12
+0.89985 at 70.50 29.96 32.26 x 41.25
+0.88838 at 111.36 48.00 33.53 x 46.77
+0.88484 at 247.54 51.15 30.21 x 37.29
+0.83953 at 149.23 49.48 27.89 x 38.50
+
+
+```
+
+![](https://z3.ax1x.com/2021/11/25/oAUxN4.jpg)
+
 ## Yolact Instance Segmentation Task - [tm_yolact.cpp](tm_yolact.cpp)
 
 We use this image:
@@ -240,7 +280,7 @@ image file : images/carvana01.jpg
 img_h, img_w, scale[3], mean[3] : 512 512 , 0.004 0.004 0.004, 0.0 0.0 0.0
 Repeat 1 times, thread 1, avg time 4861.93 ms, max_time 4861.93 ms, min_time 4861.93 ms
 --------------------------------------
-segmentatation result is save as unet_out.png
+segmentation result is save as unet_out.png
 ```
 
 ![](https://z3.ax1x.com/2021/07/01/Rs8YjI.png)
@@ -369,6 +409,33 @@ Repeat 1 times, thread 1, avg time 598.86 ms, max_time 598.86 ms, min_time 598.8
 
 ![](https://z3.ax1x.com/2021/07/08/RqxsmR.jpg)
 
+## Yolox Object Detection Task - [tm_yolox.cpp](tm_yolox.cpp)
+
+We use this image:
+
+![](https://z3.ax1x.com/2021/06/30/RBVdq1.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_yolox -m ../models/yolox_nano.tmfile -i ../images/ssd_dog.jpg -r 1 -t 1
+```
+output：
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, thread 1, avg time 97.64 ms, max_time 97.64 ms, min_time 97.64 ms
+--------------------------------------
+detection num: 3
+16:  85%, [ 132,  216,  318,  545], dog
+ 1:  83%, [ 112,  140,  568,  427], bicycle
+ 2:  69%, [ 466,   77,  693,  168], car
+
+```
+
+![](https://z3.ax1x.com/2021/11/19/IHwcJ1.jpg)
+
+
+
 ## OpenPose Human Pose Estimation Task - [tm_openpose.cpp](tm_openpose.cpp)
 
 We use this image:
@@ -474,5 +541,72 @@ Repeat 1 times, thread 1, avg time 23.30 ms, max_time 23.30 ms, min_time 23.30 m
 ```
 
 The result of ocr recognition is displayed in terminal, you may also modify the source code to save it to file.
+
+
+## Human segmentation task - [tm_seghuman.cpp](tm_seghuman.cpp)
+
+model file：`paddleSegSim.tmfile`
+
+image file：`human_image.jpg`
+
+image file：
+
+![](https://s1.ax1x.com/2021/12/09/offIJK.jpg)
+
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./build/install/bin/tm_seghuman -m models/paddleSegSim.tmfile -i images/human_image.jpeg
+```
+
+result：
+
+```bash
+tengine-lite library version: 1.5-dev
+Repeat 1 times, avg time 123.766 ms, max_time 123.766 ms, min_time 123.766 ms
+```
+
+![](https://s1.ax1x.com/2021/12/09/of4XPP.jpg)
+
+segmentation result image is saved as seg_human_result.jpg.
+
+
+## Distance Estimation
+
+model file:`mobilenet_ssd.tmfile`
+
+run (GPU recommended)
+```bash
+$ cd build/examples
+$ ln -s models/mobilenet_ssd.tmfile
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./tm_pipeline_estimate_ped_distance
+detect result num: 1 
+person	:100.0%
+BOX:( 35 , 78 ),( 587 , 478 )
+...
+```
+
+## Facial Feature Extraction
+
+model list:
+* `rfb-320.tmfile`  face detection
+* `landmark.tmfile`  face landmark
+* `mobilefacenet.tmfile`  face feature
+
+```bash
+$ cd build/examples
+$ ln -s models/rfb-320.tmfile
+$ ln -s models/landmark.tmfile
+$ ln -s models/mobilefacenet.tmfile
+```
+
+run (GPU recommanded):
+```bash
+$ export LD_LIBRARY_PATH=./build/install/lib
+$ ./tm_pipeline_enroll_face  ./images
+```
+
+face feature would serialized to `feature0.bin`
+
 
 We will continously updating more fancy demos, please stay tuned...

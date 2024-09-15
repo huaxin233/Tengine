@@ -83,14 +83,7 @@ int VXEngine::VXTensorMap(struct graph* ir_graph, int ir_tensor_idx, int spec_ty
         tim::vx::ShapeType vx_shape;
 
         struct node* ir_node = get_ir_graph_node(ir_graph, ir_tensor->producer);
-        if (ir_node->op.type == OP_FC && ir_node->output_tensors[0] == ir_tensor_idx)
-        {
-            for (int i = 1; i >= 0; i--)
-            {
-                vx_shape.push_back(Dims[i]);
-            }
-        }
-        else if (spec_type == SPEC_TYPE_PRELU)
+        if (spec_type == SPEC_TYPE_PRELU)
         {
             vx_shape.push_back(1);
             vx_shape.push_back(1);
@@ -177,7 +170,7 @@ int VXEngine::VXTensorMap(struct graph* ir_graph, int ir_tensor_idx, int spec_ty
                 vx_tensor = this->graph->CreateTensor(vx_spec, ir_tensor->data);
             }
         }
-        else if (spec_type == SPEC_TYPE_DWCONV)
+        else if (spec_type == SPEC_TYPE_DWCONV || spec_type == SPEC_TYPE_DW_DECONV)
         {
             auto tmpvx = vx_shape[ir_tensor->dim_num - 2];
             vx_shape[ir_tensor->dim_num - 2] = vx_shape[ir_tensor->dim_num - 1];
@@ -273,6 +266,9 @@ int VXEngine::Build(struct subgraph* subgraph)
             case OP_CONV:
                 this->AddConvolutionNode(ir_node);
                 break;
+            case OP_CROP:
+                this->AddCropNode(ir_node);
+                break;
             case OP_DECONV:
                 this->AddDeconvNode(ir_node);
                 break;
@@ -300,11 +296,17 @@ int VXEngine::Build(struct subgraph* subgraph)
             case OP_HARDSWISH:
                 this->AddHardSwishNode(ir_node);
                 break;
+            case OP_INSTANCENORM:
+                this->AddInstanceNormNode(ir_node);
+                break;
             case OP_INTERP:
                 this->AddInterpNode(ir_node);
                 break;
             case OP_MISH:
                 this->AddMishNode(ir_node);
+                break;
+            case OP_PAD:
+                this->AddPadNode(ir_node);
                 break;
             case OP_PERMUTE:
                 this->AddPermuteNode(ir_node);
@@ -314,6 +316,9 @@ int VXEngine::Build(struct subgraph* subgraph)
                 break;
             case OP_PRELU:
                 this->AddPReluNode(ir_node);
+                break;
+            case OP_REDUCTION:
+                this->AddReduceNode(ir_node);
                 break;
             case OP_RELU:
                 this->AddReluNode(ir_node);
@@ -353,6 +358,18 @@ int VXEngine::Build(struct subgraph* subgraph)
                 break;
             case OP_UPSAMPLE:
                 this->AddUpsampleNode(ir_node);
+                break;
+            case OP_SPATIALTRANSFORMER:
+                this->AddSpatialtransformerNode(ir_node);
+                break;
+            case OP_L2NORMALIZATION:
+                this->AddL2normalizationNode(ir_node);
+                break;
+            case OP_GELU:
+                this->AddGeluNode(ir_node);
+                break;
+            case OP_LAYERNORM:
+                this->AddLayerNormNode(ir_node);
                 break;
             default:
                 fprintf(stderr, "Tengine TIM-VX: Cannot support OP(%d).\n", ir_node->index);
@@ -502,20 +519,23 @@ int VXEngine::VXEnginePreRun(struct subgraph* subgraph)
                     this->VXTensorMap(ir_graph, ir_node->input_tensors[2], SPEC_TYPE_CONV_BIAS);
                 }
             }
+            else if (ir_node->op.type == OP_DECONV)
+            {
+                auto deconv_param = (struct deconv_param*)ir_node->op.param_mem;
+                if ((deconv_param->group == deconv_param->num_output) && (deconv_param->num_output != 1))
+                {
+                    this->VXTensorMap(ir_graph, ir_node->input_tensors[1], SPEC_TYPE_DW_DECONV);
+                }
+            }
             else if (ir_node->op.type == OP_PRELU)
             {
                 this->VXTensorMap(ir_graph, ir_node->input_tensors[1], SPEC_TYPE_PRELU);
             }
             else if (ir_node->op.type == OP_INTERP)
             {
-                if (ir_node->input_num == 3)
+                for(int interpi = 1; interpi < ir_node->input_num;interpi++)
                 {
-                this->VXTensorMap(ir_graph, ir_node->input_tensors[1], SPEC_TYPE_INTERP);
-                this->VXTensorMap(ir_graph, ir_node->input_tensors[2], SPEC_TYPE_INTERP);
-                }
-                else if (ir_node->input_num == 2)
-                {
-                    this->VXTensorMap(ir_graph, ir_node->input_tensors[1], SPEC_TYPE_INTERP);
+                    this->VXTensorMap(ir_graph,ir_node->input_tensors[interpi],SPEC_TYPE_INTERP);
                 }
             }
             else if (ir_node->op.type == OP_SLICE)
@@ -635,7 +655,7 @@ int VXEngine::VXEngineRun(struct subgraph* subgraph)
         const char* env = getenv(TENGINE_DUMP_LAYER);
         if (env && env[0] == '1')
         {
-            for (uint8_t i = 0; i < ir_graph->tensor_num; i++)
+            for (uint16_t i = 0; i < ir_graph->tensor_num; i++)
             {
                 if (ir_graph->tensor_list[i]->tensor_type == TENSOR_TYPE_VAR)
                 {
@@ -653,7 +673,7 @@ int VXEngine::VXEngineRun(struct subgraph* subgraph)
                 }
             }
 
-            for (uint8_t i = 0; i < ir_graph->tensor_num; i++)
+            for (uint16_t i = 0; i < ir_graph->tensor_num; i++)
             {
                 TLOG_INFO("TIM-VX: Tensor type %d\n",ir_graph->tensor_list[i]->tensor_type);
                 if (ir_graph->tensor_list[i]->tensor_type == TENSOR_TYPE_VAR)

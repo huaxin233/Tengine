@@ -29,20 +29,20 @@
 #include "tengine/c_api.h"
 #include "tengine_operations.h"
 
-#define DEFAULT_IMG_H 224
-#define DEFAULT_IMG_W 224
-#define DEFAULT_SCALE1 0.017f
-#define DEFAULT_SCALE2 0.017f
-#define DEFAULT_SCALE3 0.017f
-#define DEFAULT_MEAN1 104.007
-#define DEFAULT_MEAN2 116.669
-#define DEFAULT_MEAN3 122.679
-#define DEFAULT_LOOP_COUNT 1
+#define DEFAULT_IMG_H        224
+#define DEFAULT_IMG_W        224
+#define DEFAULT_SCALE1       0.017f
+#define DEFAULT_SCALE2       0.017f
+#define DEFAULT_SCALE3       0.017f
+#define DEFAULT_MEAN1        104.007
+#define DEFAULT_MEAN2        116.669
+#define DEFAULT_MEAN3        122.679
+#define DEFAULT_LOOP_COUNT   1
 #define DEFAULT_THREAD_COUNT 1
 #define DEFAULT_CPU_AFFINITY 255
 
 int tengine_classify(const char* model_file, const char* image_file, int img_h, int img_w, const float* mean,
-                     const float* scale, int loop_count, int num_thread, int affinity)
+                     const float* scale, int loop_count, int num_thread, int affinity, int use_opencl)
 {
     /* set runtime options */
     struct options opt;
@@ -58,9 +58,26 @@ int tengine_classify(const char* model_file, const char* image_file, int img_h, 
         return -1;
     }
     fprintf(stderr, "tengine-lite library version: %s\n", get_tengine_version());
+    graph_t graph;
+    if (use_opencl)
+    {
+        context_t ocl_context = create_context("ocl", 1);
+        int rtt = add_context_device(ocl_context, "OCL");
+        if (0 > rtt)
+        {
+            fprintf(stderr, "add_context_device OpenCL failed.\n");
+            return -1;
+        }
 
-    /* create graph, load tengine model xxx.tmfile */
-    graph_t graph = create_graph(NULL, "tengine", model_file);
+        /* create graph, load tengine model xxx.tmfile */
+        graph = create_graph(ocl_context, "tengine", model_file);
+    }
+    else
+    {
+        /* create graph, load tengine model xxx.tmfile */
+        graph = create_graph(NULL, "tengine", model_file);
+    }
+
     if (NULL == graph)
     {
         fprintf(stderr, "Create graph failed.\n");
@@ -69,8 +86,12 @@ int tengine_classify(const char* model_file, const char* image_file, int img_h, 
 
     /* set the shape, data buffer of input_tensor of the graph */
     int img_size = img_h * img_w * 3;
-    int dims[] = {1, 3, img_h, img_w};    // nchw
-    float* input_data = ( float* )malloc(img_size * sizeof(float));
+    int dims[] = {1, 3, img_h, img_w}; // nchw
+    float* input_data = (float*)malloc(img_size * sizeof(float));
+    if (input_data == NULL)
+    {
+        return -1;
+    }
 
     tensor_t input_tensor = get_graph_input_tensor(graph, 0, 0);
     if (input_tensor == NULL)
@@ -85,11 +106,11 @@ int tengine_classify(const char* model_file, const char* image_file, int img_h, 
         return -1;
     }
 
-    if (set_tensor_buffer(input_tensor, input_data, img_size * 4) < 0)
+    if (set_tensor_buffer(input_tensor, input_data, img_size * sizeof(float)) < 0)
     {
         fprintf(stderr, "Set input tensor buffer failed\n");
         return -1;
-    }    
+    }
 
     /* prerun graph, set work options(num_thread, cluster, precision) */
     if (prerun_graph_multithread(graph, opt) < 0)
@@ -131,7 +152,7 @@ int tengine_classify(const char* model_file, const char* image_file, int img_h, 
 
     /* get the result of classification */
     tensor_t output_tensor = get_graph_output_tensor(graph, 0, 0);
-    float* output_data = ( float* )get_tensor_buffer(output_tensor);
+    float* output_data = (float*)get_tensor_buffer(output_tensor);
     int output_size = get_tensor_buffer_size(output_tensor) / sizeof(float);
 
     print_topk(output_data, output_size, 5);
@@ -170,43 +191,47 @@ int main(int argc, char* argv[])
     int img_w = 0;
     float mean[3] = {-1.f, -1.f, -1.f};
     float scale[3] = {0.f, 0.f, 0.f};
+    int use_opencl = 0;
 
     int res;
-    while ((res = getopt(argc, argv, "m:i:l:g:s:w:r:t:a:h")) != -1)
+    while ((res = getopt(argc, argv, "m:i:l:g:s:w:r:t:a:h:l")) != -1)
     {
         switch (res)
         {
-            case 'm':
-                model_file = optarg;
-                break;
-            case 'i':
-                image_file = optarg;
-                break;
-            case 'g':
-                split(img_hw, optarg, ",");
-                img_h = ( int )img_hw[0];
-                img_w = ( int )img_hw[1];
-                break;
-            case 's':
-                split(scale, optarg, ",");
-                break;
-            case 'w':
-                split(mean, optarg, ",");
-                break;
-            case 'r':
-                loop_count = atoi(optarg);
-                break;
-            case 't':
-                num_thread = atoi(optarg);
-                break;
-            case 'a':
-                cpu_affinity = atoi(optarg);
-                break;
-            case 'h':
-                show_usage();
-                return 0;
-            default:
-                break;
+        case 'm':
+            model_file = optarg;
+            break;
+        case 'i':
+            image_file = optarg;
+            break;
+        case 'g':
+            split(img_hw, optarg, ",");
+            img_h = (int)img_hw[0];
+            img_w = (int)img_hw[1];
+            break;
+        case 's':
+            split(scale, optarg, ",");
+            break;
+        case 'w':
+            split(mean, optarg, ",");
+            break;
+        case 'r':
+            loop_count = atoi(optarg);
+            break;
+        case 't':
+            num_thread = atoi(optarg);
+            break;
+        case 'a':
+            cpu_affinity = atoi(optarg);
+            break;
+        case 'l':
+            use_opencl = atoi(optarg);
+            break;
+        case 'h':
+            show_usage();
+            return 0;
+        default:
+            break;
         }
     }
 
@@ -256,7 +281,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Mean value not specified, use default   %.1f, %.1f, %.1f\n", mean[0], mean[1], mean[2]);
     }
 
-    if (tengine_classify(model_file, image_file, img_h, img_w, mean, scale, loop_count, num_thread, cpu_affinity) < 0)
+    if (tengine_classify(model_file, image_file, img_h, img_w, mean, scale, loop_count, num_thread, cpu_affinity, use_opencl) < 0)
         return -1;
 
     return 0;

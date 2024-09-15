@@ -25,7 +25,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
-#include "compiler_fp16.h"
+#include "graph/tensor.h"
+#include "utility/log.h"
+#include "common/compiler_fp16.h"
 #include "conv_dw_kernel_fp16_arm82.h"
 
 void dw_k3s1p1_fp16_a76(__fp16* input, __fp16* kernel, __fp16* output, long channel_number, long input_w, long input_h, __fp16* bias);
@@ -37,7 +39,7 @@ void dw_k3s2_fp16_relu_fused_a76(__fp16* bias, __fp16* input, __fp16* kernel, __
 void dw_k3s2_fp16_relu6_fused_a76(__fp16* bias, __fp16* input, __fp16* kernel, __fp16* output, long channel_number, long input_w, long input_h, long pad0);
 
 int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, struct tensor* bias_tensor,
-                struct tensor* output_tensor, struct conv_param* param, int num_thread, int cpu_affinity)
+                     struct tensor* output_tensor, struct conv_param* param, int num_thread, int cpu_affinity)
 {
     /* param */
     int pads[4];
@@ -79,7 +81,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
     if (bias_tensor)
         bias_buf = bias_tensor->data;
 
-    for (int n = 0; n < batch; n++)    // batch size
+    for (int n = 0; n < batch; n++) // batch size
     {
         __fp16* input = input_buf + n * input_size * group;
         __fp16* output = output_buf + n * output_size * group;
@@ -92,7 +94,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
         {
             if (activation == 0)
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
@@ -106,7 +108,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
             }
             else if (activation > 0)
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
@@ -120,7 +122,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
             }
             else
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
@@ -137,7 +139,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
         {
             if (activation == 0)
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
@@ -151,7 +153,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
             }
             else if (activation > 0)
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
@@ -165,7 +167,7 @@ int conv_dw_fp16_run(struct tensor* input_tensor, struct tensor* filter_tensor, 
             }
             else
             {
-                #pragma omp parallel for num_threads(num_thread)
+#pragma omp parallel for num_threads(num_thread)
                 for (int i = 0; i < group; i++)
                 {
                     __fp16* cur_input = input + i * channel_size;
